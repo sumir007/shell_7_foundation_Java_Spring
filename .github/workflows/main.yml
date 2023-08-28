@@ -1,0 +1,80 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  # Azure Resource Manager connection created during pipeline creation
+  azureSubscription: '<subscription-name>'
+  resourceGroupName: '<resource-group-name>'
+  containerRegistry: '<container-registry-name>'
+  imageRepository: '<image-repository-name>'
+  webAppName: '<web-app-name>'
+
+steps:
+- task: Docker@2
+  displayName: Build and push an image to container registry
+  inputs:
+    command: buildAndPush
+    repository: $(containerRegistry).azurecr.io/$(imageRepository)
+    dockerfile: $(Build.SourcesDirectory)/Dockerfile
+    buildContext: $(Build.SourcesDirectory)
+
+- task: AzureWebAppContainer@1
+  displayName: Deploy to Web App container
+  inputs:
+    azureSubscription: $(azureSubscription)
+    appName: $(webAppName)
+    imageName: $(containerRegistry).azurecr.io/$(imageRepository):$(Build.BuildI
+name: Deploy Docker Container
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-container
+        image: my-image:my-tag
+        ports:
+        - containerPort: 80
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run a one-line script
+        run: PR is triggered
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-container
+        image: my-image:my-tag
+        ports:
+        - containerPort: 80
